@@ -1,0 +1,74 @@
+// Tampilkan seluruh data dari tabel "employees"
+SELECT * FROM employees;
+
+// Berapa banyak karyawan yang memiliki posisi pekerjaan (job title) "Manager"?
+SELECT COUNT(*) AS total_managers
+FROM employees
+WHERE job_title = 'Manager';
+
+// Tampilkan daftar nama dan gaji (salary) dari karyawan yang bekerja di departemen "Sales" atau
+"Marketing" 
+
+SELECT employee_name, salary
+FROM employees
+WHERE department IN ('Sales', 'Marketing');
+
+// Hitung rata-rata gaji (salary) dari karyawan yang bergabung (joined) dalam 5 tahun terakhir (berdasarkan
+kolom "joined_date")
+SELECT AVG(salary) AS average_salary
+FROM employees
+WHERE joined_date >= (CURRENT_DATE - INTERVAL 5 YEAR);
+
+
+// Tampilkan 5 karyawan dengan total penjualan (sales) tertinggi dari tabel "employees" dan "sales_data"
+SELECT e.employee_id, e.employee_name, SUM(sd.sales) AS total_sales
+FROM employees e
+JOIN sales_data sd ON e.employee_id = sd.employee_id
+GROUP BY e.employee_id, e.employee_name
+ORDER BY total_sales DESC
+LIMIT 5;
+
+
+// Tampilkan nama, gaji (salary), dan rata-rata gaji (salary) dari semua karyawan yang bekerja di departemen
+yang memiliki rata-rata gaji lebih tinggi dari gaji rata-rata di semua departemen 
+SELECT 
+    e.employee_name,
+    e.salary,
+    AVG(e.salary) OVER (PARTITION BY e.department) AS department_avg_salary
+FROM 
+    employees e
+WHERE 
+    e.department_avg_salary > (SELECT AVG(salary) FROM employees);
+
+// Tampilkan nama dan total penjualan (sales) dari setiap karyawan, bersama dengan peringkat (ranking)
+masing-masing karyawan berdasarkan total penjualan. Peringkat 1 adalah karyawan dengan total
+penjualan tertinggi 
+
+SELECT 
+    employee_name,
+    SUM(sales) AS total_sales,
+    DENSE_RANK() OVER (ORDER BY SUM(sales) DESC) AS sales_rank
+FROM 
+    sales_data
+GROUP BY 
+    employee_id
+ORDER BY 
+    sales_rank;
+    
+// Buat sebuah stored procedure yang menerima nama departemen sebagai input, dan mengembalikan
+daftar karyawan dalam departemen tersebut bersama dengan total gaji (salary) yang mereka terima
+
+DELIMITER //
+
+CREATE PROCEDURE GetDepartmentEmployees(IN department_name VARCHAR(255))
+BEGIN
+    SELECT 
+        employee_name,
+        salary
+    FROM 
+        employees
+    WHERE 
+        department = department_name;
+END //
+
+DELIMITER ;
